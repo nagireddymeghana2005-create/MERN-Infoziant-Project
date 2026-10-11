@@ -1,21 +1,32 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import LoadingIndicator from '../../components/LoadingIndicator';
 import '../Dashboard.css';
 
 const Bookings = () => {
   const navigate = useNavigate();
   const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+  const [pendingBooking] = useState(() => {
+    const storedBooking = localStorage.getItem('pendingBooking');
+    return storedBooking ? JSON.parse(storedBooking) : null;
+  });
+  const [showDropdown, setShowDropdown] = useState(false);
   const [showDateSelection, setShowDateSelection] = useState(false);
   const [showTimeSlots, setShowTimeSlots] = useState(false);
-  const [selectedDate, setSelectedDate] = useState('');
-  const [selectedSlot, setSelectedSlot] = useState('');
+  const [selectedDate, setSelectedDate] = useState(pendingBooking?.date?.slice(0, 10) || '');
+  const [selectedSlot, setSelectedSlot] = useState(pendingBooking?.timeSlot || '');
+  const [availableTimeSlots, setAvailableTimeSlots] = useState([]);
+  const [availabilityMessage, setAvailabilityMessage] = useState('');
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
+  const [availabilityError, setAvailabilityError] = useState('');
+  const [availabilityAttempt, setAvailabilityAttempt] = useState(0);
   const [formData, setFormData] = useState({
-    name: userInfo?.name || '',
-    age: '',
-    gender: '',
-    weight: '',
-    symptoms: '',
-    doctor: ''
+    name: pendingBooking?.name || userInfo?.name || '',
+    age: pendingBooking?.age || '',
+    gender: pendingBooking?.gender || '',
+    weight: pendingBooking?.weight || '',
+    symptoms: pendingBooking?.symptoms || '',
+    doctor: pendingBooking?.doctorId || ''
   });
 
   const doctors = [
@@ -28,10 +39,47 @@ const Bookings = () => {
     { id: '6ac4bcf0c2e0aa88256a9be1', name: 'Dr. Rahul Verma', specialization: 'Neurologist' }
   ];
 
-  const timeSlots = [
-    '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM', '12:00 PM', '12:30 PM',
-    '3:00 PM', '3:30 PM', '4:00 PM', '4:30 PM'
-  ];
+  useEffect(() => {
+    if (!showTimeSlots || !selectedDate || !formData.doctor) {
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    const fetchAvailability = async () => {
+      setAvailabilityLoading(true);
+      setAvailabilityError('');
+
+      try {
+        const params = new URLSearchParams({
+          doctorId: formData.doctor,
+          date: selectedDate
+        });
+        const response = await fetch(
+          `http://localhost:5000/api/booking/availability?${params}`,
+          { signal: controller.signal }
+        );
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Unable to load available slots.');
+        }
+
+        setAvailableTimeSlots(data.availableSlots);
+        setAvailabilityMessage(data.message || '');
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          setAvailabilityError(error.message);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setAvailabilityLoading(false);
+        }
+      }
+    };
+
+    fetchAvailability();
+    return () => controller.abort();
+  }, [showTimeSlots, selectedDate, formData.doctor, availabilityAttempt]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -57,6 +105,10 @@ const Bookings = () => {
   };
 
   const handleSlotSelect = async (slot) => {
+    if (availabilityLoading || availabilityError || !availableTimeSlots.includes(slot)) {
+      return;
+    }
+
     setSelectedSlot(slot);
     const selectedDoctor = doctors.find(d => d.id === formData.doctor);
     const userPhone = localStorage.getItem('userPhone') || '';
@@ -79,47 +131,46 @@ const Bookings = () => {
     navigate('/patient/login');
   };
 
-  const handleContact = () => {
-    navigate('/patient/contact');
-  };
-
-  const handleHome = () => {
+  const handleBack = () => {
     navigate('/patient/home');
   };
 
-  const handlePayment = () => {
-    navigate('/patient/bookings');
-  };
-
-  const handleStatus = () => {
-    navigate('/patient/status');
-  };
-
   return (
-    <div className="dashboard-container">
+    <div className="dashboard-container patient-portal patient-booking-page">
+      <div className="top-navbar-full">
+        <div className="navbar-left">
+          <span className="navbar-brand">DOC-CONNECT</span>
+        </div>
+        <div className="navbar-right">
+          <div className="user-dropdown-container">
+            <button
+              className="user-dropdown-button"
+              onClick={() => setShowDropdown((isOpen) => !isOpen)}
+              aria-expanded={showDropdown}
+            >
+              👤 {userInfo?.name || 'Patient'} ▼
+            </button>
+            {showDropdown && (
+              <div className="user-dropdown-menu">
+                <button className="dropdown-item" onClick={() => navigate('/patient/profile')}>
+                  📋 Profile
+                </button>
+                <button className="dropdown-item" onClick={handleLogout}>
+                  🚪 Logout
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       <div className="dashboard-main">
-        <div className="dashboard-header">
-          <div className="header-left">
-            <div className="header-logo">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M2 17L12 22L22 17" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M2 12L12 17L22 12" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            <span className="header-title">Doc Token System</span>
-          </div>
-          <nav className="header-nav">
-            <button onClick={handleHome} className="nav-button">🏠 Home</button>
-            <button className="nav-button active">📅 Bookings</button>
-            <button onClick={handlePayment} className="nav-button">💳 Payment</button>
-            <button onClick={handleStatus} className="nav-button">📈 Status</button>
+        <div className="dashboard-sidebar-clean">
+          <nav className="sidebar-nav-clean">
+            <button onClick={handleBack} className="sidebar-nav-button-clean active">
+              📅 Book Appointment
+            </button>
           </nav>
-          <div className="header-right">
-            <button onClick={handleContact} className="header-button contact-button">📞 Contact</button>
-            <button onClick={handleLogout} className="header-button logout-button">🚪 Logout</button>
-            <button className="header-button user-profile-button">👤 {userInfo?.name || 'xyz'}</button>
-          </div>
         </div>
 
         <div className="dashboard-content">
@@ -249,10 +300,22 @@ const Bookings = () => {
                 <h3>Select Your Preferred Time Slot</h3>
                 <p className="time-slots-subtitle">Available slots for</p>
                 <p className="selected-date-display">{new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                {availabilityLoading && <LoadingIndicator label="Checking available slots..." />}
+                {availabilityError && (
+                  <div className="booking-availability-error" role="alert">
+                    <span>{availabilityError}</span>
+                    <button type="button" onClick={() => setAvailabilityAttempt((attempt) => attempt + 1)}>
+                      Try again
+                    </button>
+                  </div>
+                )}
+                {!availabilityLoading && !availabilityError && availabilityMessage && (
+                  <p>{availabilityMessage}</p>
+                )}
                 <div className="time-slots-grid">
-                  {timeSlots.map((slot, index) => (
+                  {!availabilityLoading && !availabilityError && availableTimeSlots.map((slot) => (
                     <button
-                      key={index}
+                      key={slot}
                       className={`time-slot-button ${selectedSlot === slot ? 'selected' : ''}`}
                       onClick={() => handleSlotSelect(slot)}
                     >
@@ -260,6 +323,9 @@ const Bookings = () => {
                     </button>
                   ))}
                 </div>
+                {!availabilityLoading && !availabilityError && !availabilityMessage && availableTimeSlots.length === 0 && (
+                  <p>No time slots are available for this date.</p>
+                )}
                 <button
                   className="back-button"
                   onClick={() => {

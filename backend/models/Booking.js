@@ -58,12 +58,27 @@ const bookingSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ['pending', 'confirmed', 'completed', 'cancelled'],
-    default: 'confirmed'
+    default: 'pending'
+  },
+  cancellationReason: {
+    type: String,
+    trim: true,
+    maxlength: 500
   },
   createdAt: {
     type: Date,
     default: Date.now
   }
 });
+
+bookingSchema.index(
+  { doctorId: 1, date: 1, timeSlot: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      status: { $in: ['pending', 'confirmed', 'completed'] }
+    }
+  }
+);
 
 module.exports = mongoose.model('Booking', bookingSchema);

@@ -1,149 +1,188 @@
-import React from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../Dashboard.css';
+import LoadingIndicator from '../../components/LoadingIndicator';
+import LoadingSkeleton from '../../components/LoadingSkeleton';
+import DoctorPortalLayout from './DoctorPortalLayout';
+
+const formatDateKey = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const getMonday = (date) => {
+  const monday = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const dayOfWeek = monday.getDay();
+  monday.setDate(monday.getDate() + (dayOfWeek === 0 ? -6 : 1 - dayOfWeek));
+  monday.setHours(0, 0, 0, 0);
+  return monday;
+};
 
 const DoctorHome = () => {
   const navigate = useNavigate();
-  const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+  const userInfo = JSON.parse(localStorage.getItem('userInfo') || 'null');
+  const [appointments, setAppointments] = useState([]);
+  const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const handleLogout = () => {
-    localStorage.removeItem('userInfo');
-    navigate('/doctor/login');
+  const fetchAppointments = useCallback(async () => {
+    if (!userInfo?.token || userInfo.role !== 'doctor') {
+      setError('Please sign in as a doctor to view your calendar.');
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    try {
+      const response = await fetch('http://localhost:5000/api/booking/doctor', {
+        headers: { Authorization: `Bearer ${userInfo.token}` }
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Unable to load your appointments.');
+      }
+      setAppointments(data);
+    } catch (fetchError) {
+      setError(fetchError.message);
+    } finally {
+      setLoading(false);
+    }
+  }, [userInfo?.role, userInfo?.token]);
+
+  useEffect(() => {
+    fetchAppointments();
+  }, [fetchAppointments]);
+
+  const days = useMemo(() => Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(weekStart);
+    date.setDate(weekStart.getDate() + index);
+    return {
+      date,
+      key: formatDateKey(date),
+      label: date.toLocaleDateString(undefined, { weekday: 'short' }),
+      number: date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })
+    };
+  }), [weekStart]);
+
+  const appointmentsByDay = useMemo(() => {
+    const grouped = new Map(days.map((day) => [day.key, []]));
+    appointments.forEach((appointment) => {
+      const dateKey = typeof appointment.date === 'string'
+        ? appointment.date.slice(0, 10)
+        : formatDateKey(new Date(appointment.date));
+      if (grouped.has(dateKey)) {
+        grouped.get(dateKey).push(appointment);
+      }
+    });
+    grouped.forEach((dayAppointments) => {
+      dayAppointments.sort((a, b) => a.timeSlot.localeCompare(b.timeSlot));
+    });
+    return grouped;
+  }, [appointments, days]);
+
+  const moveWeek = (weekOffset) => {
+    setWeekStart((currentWeek) => {
+      const nextWeek = new Date(currentWeek);
+      nextWeek.setDate(currentWeek.getDate() + weekOffset * 7);
+      return nextWeek;
+    });
   };
 
-  const handleAppointments = () => {
-    navigate('/doctor/appointments');
-  };
-
-  const handlePatients = () => {
-    navigate('/doctor/patients');
-  };
-
-  const handleSchedule = () => {
-    navigate('/doctor/schedule');
-  };
-
-  const handleContact = () => {
-    navigate('/doctor/contact');
-  };
-
-  const handleStats = () => {
-    alert('Statistics feature coming soon!');
-  };
-
-  const handleMessages = () => {
-    alert('Messages feature coming soon!');
-  };
-
-  const handleSettings = () => {
-    alert('Settings feature coming soon!');
-  };
+  const weekLabel = `${weekStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – ${
+    days[6]?.date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) || ''
+  }`;
 
   return (
-    <div className="dashboard-container">
-      <div className="dashboard-main">
-        <div className="dashboard-header">
-          <div className="header-left">
-            <div className="header-logo">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M2 17L12 22L22 17" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M2 12L12 17L22 12" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            <span className="header-title">DocConnect - Doctor Portal</span>
+    <DoctorPortalLayout activePage="home">
+      <section className="doctor-welcome-card">
+        <h1>Welcome, {userInfo?.name || 'Doctor'}</h1>
+        <p>Your doctor dashboard is ready.</p>
+        {userInfo?.specialization && (
+          <p className="doctor-specialization">{userInfo.specialization}</p>
+        )}
+      </section>
+
+      <section className="doctor-calendar-panel" aria-label="Weekly appointment calendar">
+        <header className="doctor-calendar-header">
+          <div>
+            <p className="doctor-calendar-eyebrow">YOUR SCHEDULE</p>
+            <h2>Weekly Calendar</h2>
+            <p className="doctor-calendar-range">{weekLabel}</p>
           </div>
-          <nav className="header-nav">
-            <button className="nav-button active">🏠 Home</button>
-            <button onClick={handleAppointments} className="nav-button">📅 Appointments</button>
-            <button onClick={handlePatients} className="nav-button">👥 Patients</button>
-            <button onClick={handleSchedule} className="nav-button">📆 Schedule</button>
-          </nav>
-          <div className="header-right">
-            <button onClick={handleContact} className="header-button contact-button">📞 Contact</button>
-            <button onClick={handleLogout} className="header-button logout-button">🚪 Logout</button>
-            <button className="header-button user-profile-button">👨‍⚕️ {userInfo?.name || 'Dr. xyz'}</button>
+          <div className="doctor-calendar-controls">
+            <button type="button" onClick={() => moveWeek(-1)} aria-label="Previous week">‹</button>
+            <button type="button" onClick={() => {
+              setWeekStart(getMonday(new Date()));
+            }}>This week</button>
+            <button type="button" onClick={() => moveWeek(1)} aria-label="Next week">›</button>
+            <button
+              type="button"
+              className="doctor-calendar-refresh"
+              onClick={fetchAppointments}
+              disabled={loading}
+            >
+              {loading ? <LoadingIndicator label="Loading..." /> : 'Refresh'}
+            </button>
           </div>
-        </div>
+        </header>
 
-        <div className="dashboard-content">
-          <div className="hero-section">
-            <h1>Welcome, Dr. {userInfo?.name || 'Doctor'}!</h1>
-            <p>Manage your appointments, patients, and schedule efficiently.</p>
+        {error && (
+          <div className="doctor-calendar-error" role="alert">
+            <span>{error}</span>
+            <button type="button" onClick={fetchAppointments}>Try again</button>
           </div>
+        )}
 
-          <div className="features-grid">
-            <div className="feature-card">
-              <div className="feature-icon">📅</div>
-              <h3>View Appointments</h3>
-              <p>See all your scheduled appointments and manage your daily schedule.</p>
-              <button onClick={handleAppointments} className="feature-button">View Appointments</button>
-            </div>
-
-            <div className="feature-card">
-              <div className="feature-icon">👥</div>
-              <h3>Patient Records</h3>
-              <p>Access and manage patient medical records and history.</p>
-              <button onClick={handlePatients} className="feature-button">View Patients</button>
-            </div>
-
-            <div className="feature-card">
-              <div className="feature-icon">📆</div>
-              <h3>Manage Schedule</h3>
-              <p>Set your availability and manage your working hours.</p>
-              <button onClick={handleSchedule} className="feature-button">Manage Schedule</button>
-            </div>
-
-            <div className="feature-card">
-              <div className="feature-icon">📊</div>
-              <h3>Statistics</h3>
-              <p>View your performance statistics and patient feedback.</p>
-              <button onClick={handleStats} className="feature-button">View Stats</button>
-            </div>
-
-            <div className="feature-card">
-              <div className="feature-icon">💬</div>
-              <h3>Messages</h3>
-              <p>Communicate with patients and respond to queries.</p>
-              <button onClick={handleMessages} className="feature-button">View Messages</button>
-            </div>
-
-            <div className="feature-card">
-              <div className="feature-icon">⚙️</div>
-              <h3>Settings</h3>
-              <p>Update your profile and manage account settings.</p>
-              <button onClick={handleSettings} className="feature-button">Settings</button>
-            </div>
+        {loading ? (
+          <LoadingSkeleton variant="calendar" count={7} label="Loading your weekly appointments" />
+        ) : appointments.length === 0 ? (
+          <div className="doctor-calendar-empty">
+            <span aria-hidden="true">▦</span>
+            <h3>No appointments yet</h3>
+            <p>Appointments booked with you will appear here.</p>
           </div>
-
-          <div className="info-section">
-            <h2>How It Works</h2>
-            <div className="steps-container">
-              <div className="step">
-                <div className="step-number">1</div>
-                <h3>Check Appointments</h3>
-                <p>View your daily schedule and upcoming patient appointments.</p>
-              </div>
-              <div className="step">
-                <div className="step-number">2</div>
-                <h3>Review Patient Info</h3>
-                <p>Access patient medical history before consultations.</p>
-              </div>
-              <div className="step">
-                <div className="step-number">3</div>
-                <h3>Conduct Consultations</h3>
-                <p>Provide quality healthcare to your patients.</p>
-              </div>
-              <div className="step">
-                <div className="step-number">4</div>
-                <h3>Update Records</h3>
-                <p>Document consultation details and prescriptions.</p>
-              </div>
+        ) : (
+          <>
+            <div className="doctor-week-grid">
+              {days.map((day) => {
+                const dayAppointments = appointmentsByDay.get(day.key) || [];
+                return (
+                  <section className="doctor-week-day" key={day.key} aria-label={`${day.label} ${day.number}`}>
+                    <header className="doctor-week-day-header">
+                      <span>{day.label}</span>
+                      <strong>{day.number}</strong>
+                    </header>
+                    <div className="doctor-week-day-appointments">
+                      {dayAppointments.length === 0 ? (
+                        <span className="doctor-calendar-no-events">No appointments</span>
+                      ) : dayAppointments.map((appointment) => (
+                        <button
+                          type="button"
+                          className={`doctor-calendar-appointment ${appointment.status}`}
+                          key={appointment._id}
+                          onClick={() => navigate(`/doctor/appointments/${appointment._id}`)}
+                          aria-label={`View ${appointment.patientName}, ${appointment.timeSlot}, ${appointment.status}`}
+                        >
+                          <span className="doctor-calendar-appointment-time">{appointment.timeSlot}</span>
+                          <strong>{appointment.patientName}</strong>
+                          <span className={`doctor-calendar-status ${appointment.status}`}>
+                            {appointment.status}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+                );
+              })}
             </div>
-          </div>
-        </div>
-      </div>
-    </div>
+
+          </>
+        )}
+      </section>
+    </DoctorPortalLayout>
   );
 };
 

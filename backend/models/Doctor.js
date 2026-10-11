@@ -36,6 +36,14 @@ const doctorSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  approvalStatus: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected']
+  },
+  isActive: {
+    type: Boolean,
+    default: true
+  },
   createdAt: {
     type: Date,
     default: Date.now
@@ -43,9 +51,9 @@ const doctorSchema = new mongoose.Schema({
 });
 
 // Hash password before saving
-doctorSchema.pre('save', async function(next) {
+doctorSchema.pre('save', async function() {
   if (!this.isModified('password')) {
-    next();
+    return;
   }
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);

@@ -24,7 +24,7 @@ const Contact = () => {
   };
 
   return (
-    <div className="dashboard-container">
+    <div className="dashboard-container patient-portal patient-contact-page">
       <div className="dashboard-main">
         <div className="dashboard-header">
           <div className="header-left">

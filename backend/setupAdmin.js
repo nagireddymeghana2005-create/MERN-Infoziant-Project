@@ -1,35 +1,41 @@
 require('dotenv').config();
+const crypto = require('crypto');
 const mongoose = require('mongoose');
 const Admin = require('./models/Admin');
 
 const setupAdmin = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/docconnect');
-    console.log('MongoDB connected');
 
-    // Check if admin already exists
-    const adminExists = await Admin.findOne({ email: 'admin@docconnect.com' });
-    if (adminExists) {
-      console.log('Admin already exists');
-      process.exit(0);
+    const email = (process.env.ADMIN_EMAIL || 'admin@docconnect.com').trim().toLowerCase();
+    const existingAdmin = await Admin.findOne({ email });
+
+    if (existingAdmin) {
+      console.log(`Admin account already exists for ${email}; its password was not changed.`);
+      return;
     }
 
-    // Create admin
+    const password = process.env.ADMIN_PASSWORD ||
+      `${crypto.randomBytes(18).toString('base64url')}A1!`;
     const admin = await Admin.create({
-      name: 'Super Admin',
-      email: 'admin@docconnect.com',
-      password: 'admin123'
+      name: process.env.ADMIN_NAME || 'DOC-CONNECT Administrator',
+      email,
+      password
     });
 
-    console.log('Admin created successfully:');
-    console.log('Email: admin@docconnect.com');
-    console.log('Password: admin123');
-    console.log('Please change the password after first login!');
-
-    process.exit(0);
+    console.log('Admin account created successfully.');
+    console.log(`Email: ${admin.email}`);
+    if (!process.env.ADMIN_PASSWORD) {
+      console.log(`One-time password: ${password}`);
+      console.log('Save this password securely; it will not be shown again.');
+    } else {
+      console.log('Password: ADMIN_PASSWORD from the backend environment.');
+    }
   } catch (error) {
-    console.error('Error:', error.message);
-    process.exit(1);
+    console.error('Admin setup failed:', error.message);
+    process.exitCode = 1;
+  } finally {
+    await mongoose.disconnect();
   }
 };
 

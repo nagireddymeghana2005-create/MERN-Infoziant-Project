@@ -6,7 +6,7 @@ const doctors = [
   {
     name: 'Dr. Rajesh Kumar',
     email: 'rajesh@docconnect.com',
-    password: 'doctor123',
+    password: 'rajesh123',
     phone: '9876543210',
     specialization: 'General Physician',
     experience: 15,
@@ -16,7 +16,7 @@ const doctors = [
   {
     name: 'Dr. Priya Sharma',
     email: 'priya@docconnect.com',
-    password: 'doctor123',
+    password: 'priya123',
     phone: '9876543211',
     specialization: 'Cardiologist',
     experience: 12,
@@ -26,7 +26,7 @@ const doctors = [
   {
     name: 'Dr. Amit Patel',
     email: 'amit@docconnect.com',
-    password: 'doctor123',
+    password: 'amit123',
     phone: '9876543212',
     specialization: 'Dermatologist',
     experience: 10,
@@ -36,7 +36,7 @@ const doctors = [
   {
     name: 'Dr. Sunita Reddy',
     email: 'sunita@docconnect.com',
-    password: 'doctor123',
+    password: 'sunita123',
     phone: '9876543213',
     specialization: 'Pediatrician',
     experience: 8,
@@ -46,7 +46,7 @@ const doctors = [
   {
     name: 'Dr. Vikram Singh',
     email: 'vikram@docconnect.com',
-    password: 'doctor123',
+    password: 'vikram123',
     phone: '9876543214',
     specialization: 'Orthopedic',
     experience: 18,
@@ -56,7 +56,7 @@ const doctors = [
   {
     name: 'Dr. Anjali Mehta',
     email: 'anjali@docconnect.com',
-    password: 'doctor123',
+    password: 'anjali123',
     phone: '9876543215',
     specialization: 'Gynecologist',
     experience: 14,
@@ -66,7 +66,7 @@ const doctors = [
   {
     name: 'Dr. Rahul Verma',
     email: 'rahul@docconnect.com',
-    password: 'doctor123',
+    password: 'rahul123',
     phone: '9876543216',
     specialization: 'Neurologist',
     experience: 16,
@@ -80,30 +80,21 @@ const setupDoctors = async () => {
     await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/docconnect');
     console.log('MongoDB connected');
 
-    // Clear existing doctors (optional - comment out if you want to keep existing)
-    await Doctor.deleteMany({});
-    console.log('Cleared existing doctors');
-
-    // Add doctors
     for (const doctor of doctors) {
-      const newDoctor = await Doctor.create(doctor);
-      console.log(`Created doctor: ${newDoctor.name} (${newDoctor.email})`);
+      const existingDoctor = await Doctor.findOne({ email: doctor.email });
+      const doctorRecord = existingDoctor || new Doctor();
+
+      Object.assign(doctorRecord, doctor);
+      await doctorRecord.save();
+      console.log(`${existingDoctor ? 'Updated' : 'Created'} doctor: ${doctorRecord.name} (${doctorRecord.email})`);
     }
 
-    console.log('\nDoctor setup completed successfully!');
-    console.log('\nDoctor Login Credentials:');
-    console.log('============================');
-    doctors.forEach(doc => {
-      console.log(`Name: ${doc.name}`);
-      console.log(`Email: ${doc.email}`);
-      console.log(`Password: ${doc.password}`);
-      console.log('---');
-    });
-
-    process.exit(0);
+    console.log('\nDoctor setup completed successfully.');
+    await mongoose.disconnect();
   } catch (error) {
     console.error('Error setting up doctors:', error);
-    process.exit(1);
+    await mongoose.disconnect();
+    process.exitCode = 1;
   }
 };
 

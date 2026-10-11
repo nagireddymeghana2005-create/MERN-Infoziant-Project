@@ -1,22 +1,30 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import LoadingIndicator from '../../components/LoadingIndicator';
+import useLoginBackNavigation from '../../hooks/useLoginBackNavigation';
 import './PatientLogin.css';
 
 const PatientLogin = () => {
+  useLoginBackNavigation();
   const navigate = useNavigate();
   const location = useLocation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setError('');
+    setIsSubmitting(true);
+
     try {
       const response = await fetch('http://localhost:5000/api/patient/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
       });
 
       const data = await response.json();
@@ -26,11 +34,13 @@ const PatientLogin = () => {
         localStorage.setItem('userPhone', data.phone);
         navigate('/patient/home');
       } else {
-        alert(data.message || 'Login failed');
+        setError(data.message || 'Login failed. Check your email and password.');
       }
     } catch (error) {
       console.error('Login error:', error);
-      alert('Login failed. Please try again.');
+      setError('Unable to connect to the login service. Please try again when the server is available.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -58,6 +68,7 @@ const PatientLogin = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email"
+              autoComplete="username"
               required
             />
           </div>
@@ -70,6 +81,7 @@ const PatientLogin = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"
+              autoComplete="current-password"
               required
             />
           </div>
@@ -79,14 +91,20 @@ const PatientLogin = () => {
               <input type="checkbox" />
               <span>Remember me</span>
             </label>
-            <a href="/forgot-password" className="forgot-password">Forgot Password?</a>
+            <Link to="/patient/forgot-password" className="forgot-password">Forgot Password?</Link>
           </div>
 
-          <button type="submit" className="login-button">Sign In</button>
+          {error && <p className="login-error" role="alert">{error}</p>}
+          <button type="submit" className="login-button" disabled={isSubmitting}>
+            {isSubmitting ? <LoadingIndicator label="Signing in..." /> : 'Sign In'}
+          </button>
         </form>
 
         <div className="login-footer">
           <p>Don't have an account? <a href="/patient/register">Register as Patient</a></p>
+          <button type="button" className="login-home-button" onClick={() => navigate('/', { replace: true })}>
+            ← Back to landing page
+          </button>
           <div className="role-buttons">
             <button className={`role-btn ${location.pathname === '/patient/login' || location.pathname === '/' ? 'active' : ''}`} onClick={() => navigate('/patient/login')}>
               Patient

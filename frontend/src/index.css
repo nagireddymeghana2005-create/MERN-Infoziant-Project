@@ -7,3 +7,427 @@
 body {
   font-family: Arial, sans-serif;
 }
+
+:root {
+  --interaction-green: #2e8064;
+  --interaction-green-dark: #246b53;
+  --interaction-mint: #e4f3eb;
+  --interaction-ring: rgba(46, 128, 100, 0.42);
+  --interaction-shadow: 0 8px 20px rgba(24, 53, 43, 0.09);
+  --interaction-duration: 250ms;
+}
+
+body :is(button, a[href], [role="button"]) {
+  transition-property: color, background-color, border-color, box-shadow, transform, filter;
+  transition-duration: var(--interaction-duration);
+  transition-timing-function: ease;
+}
+
+body :is(.patient-portal, .doctor-portal, .admin-dashboard, .landing-page) :is(
+  button,
+  a[href],
+  [role="button"],
+  .sidebar-nav-button-clean,
+  .admin-nav-link,
+  .appointment-item,
+  .doctor-appointment-card,
+  .doctor-calendar-appointment,
+  .admin-summary-card,
+  .admin-report-card,
+  .landing-portal-card,
+  .service-card,
+  .why-card,
+  .doctor-card,
+  .landing-step-card
+) {
+  transition-duration: var(--interaction-duration);
+  transition-timing-function: ease;
+}
+
+body .patient-home-dashboard .user-dropdown .dropdown-item,
+body .patient-home-dashboard .user-menu-trigger,
+body .doctor-portal .dropdown-item,
+body .doctor-portal .user-dropdown-button,
+body .admin-dashboard .admin-nav-link,
+body .admin-dashboard .admin-bookings-table tbody tr,
+body .admin-dashboard .admin-payment-table tbody tr {
+  transition-duration: var(--interaction-duration);
+  transition-timing-function: ease;
+}
+
+body a[href] {
+  transition-property: color, text-decoration-color;
+}
+
+body :is(button, a[href], input, select, textarea, [role="button"], [tabindex]):focus-visible {
+  outline: 3px solid var(--interaction-ring);
+  outline-offset: 3px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  body button:not(:disabled):hover,
+  body [role="button"]:hover {
+    filter: brightness(0.97);
+  }
+
+  body :is(
+    .patient-portal .appointment-item,
+    .patient-portal .action-card,
+    .doctor-portal .doctor-appointment-card,
+    .doctor-portal .doctor-calendar-appointment,
+    .admin-summary-card,
+    .admin-report-card,
+    .landing-portal-card,
+    .service-card,
+    .why-card,
+    .doctor-card,
+    .landing-step-card
+  ):hover {
+    transform: translateY(-2px);
+    border-color: #c1dfcc;
+    box-shadow: var(--interaction-shadow);
+  }
+
+  body :is(.admin-bookings-table, .admin-payment-table) tbody tr:hover {
+    background-color: #f1f8f3;
+  }
+}
+
+.route-transition {
+  animation: route-fade-in 180ms ease-out both;
+}
+
+.loading-skeleton-list {
+  min-width: 0;
+}
+
+.loading-skeleton-list--doctor,
+.loading-skeleton-list--specialty,
+.loading-skeleton-list--stat {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: inherit;
+  gap: inherit;
+}
+
+.loading-skeleton-list--appointment {
+  display: grid;
+  gap: 14px;
+}
+
+.loading-skeleton-list--table {
+  display: grid;
+  min-height: 240px;
+  align-content: start;
+  padding: 8px 16px;
+}
+
+.loading-skeleton-list--calendar {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(7, minmax(100px, 1fr));
+  gap: 10px;
+  min-height: 260px;
+  overflow: hidden;
+}
+
+.loading-skeleton-shape {
+  display: block;
+  background: linear-gradient(90deg, #e5f0e9 20%, #f2f8f4 38%, #e5f0e9 58%);
+  background-size: 220% 100%;
+  animation: skeleton-shimmer 1.35s linear infinite;
+}
+
+.loading-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.loading-indicator-spinner {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 15px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: loading-spin 700ms linear infinite;
+}
+
+.loading-skeleton-card,
+.loading-skeleton-stat,
+.loading-skeleton-calendar-day {
+  min-width: 0;
+  border: 1px solid #dcebe2;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.loading-skeleton-doctor,
+.loading-skeleton-specialty {
+  min-height: 280px;
+  padding: 24px;
+}
+
+.loading-skeleton-doctor {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.loading-skeleton-avatar {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 8px;
+  border-radius: 20px;
+}
+
+.loading-skeleton-icon {
+  width: 42px;
+  height: 42px;
+  margin-bottom: 10px;
+  border-radius: 12px;
+}
+
+.loading-skeleton-line {
+  width: 100%;
+  height: 12px;
+  border-radius: 999px;
+}
+
+.loading-skeleton-line--title {
+  width: 68%;
+  height: 16px;
+}
+
+.loading-skeleton-line--medium {
+  width: 78%;
+}
+
+.loading-skeleton-line--short {
+  width: 44%;
+}
+
+.loading-skeleton-button {
+  width: 150px;
+  height: 38px;
+  margin-top: auto;
+  border-radius: 9px;
+}
+
+.loading-skeleton-appointment {
+  min-height: 136px;
+  padding: 18px;
+}
+
+.loading-skeleton-status {
+  display: grid;
+  min-height: 330px;
+  align-content: start;
+  gap: 16px;
+  padding: 22px;
+}
+
+.loading-skeleton-status .loading-skeleton-button {
+  margin-top: auto;
+}
+
+.loading-skeleton-appointment-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.loading-skeleton-badge {
+  width: 86px;
+  height: 25px;
+  flex: 0 0 86px;
+  border-radius: 999px;
+}
+
+.loading-skeleton-appointment > .loading-skeleton-line + .loading-skeleton-line {
+  margin-top: 12px;
+}
+
+.loading-skeleton-stat {
+  display: flex;
+  min-height: 116px;
+  align-items: center;
+  gap: 13px;
+  padding: 16px;
+}
+
+.loading-skeleton-stat .loading-skeleton-icon {
+  flex: 0 0 42px;
+  margin: 0;
+}
+
+.loading-skeleton-copy {
+  display: grid;
+  width: 100%;
+  gap: 12px;
+}
+
+.loading-skeleton-line--value {
+  width: 58%;
+  height: 25px;
+}
+
+.loading-skeleton-table-row {
+  display: grid;
+  grid-template-columns: 1.4fr 1.2fr 1fr 0.9fr 0.8fr;
+  align-items: center;
+  gap: 18px;
+  min-height: 50px;
+  border-bottom: 1px solid #edf3ef;
+}
+
+.loading-skeleton-table-row .loading-skeleton-line {
+  height: 11px;
+}
+
+.loading-skeleton-table-header {
+  border-bottom-color: #dcebe2;
+}
+
+.loading-skeleton-table-header .loading-skeleton-line {
+  height: 9px;
+  background: #dcebe2;
+  animation: none;
+}
+
+.loading-skeleton-calendar-day {
+  display: grid;
+  min-height: 250px;
+  align-content: start;
+  gap: 14px;
+  padding: 12px;
+}
+
+.loading-skeleton-calendar-event {
+  width: 100%;
+  height: 62px;
+  border-radius: 8px;
+}
+
+@keyframes route-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes skeleton-shimmer {
+  to { background-position-x: -220%; }
+}
+
+@keyframes loading-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .dashboard-container,
+  .dashboard-main,
+  .dashboard-content,
+  .doctor-portal-content,
+  .admin-dashboard,
+  .admin-main,
+  .admin-content {
+    min-width: 0;
+  }
+
+  .login-container {
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .patient-portal :is(input, select, textarea),
+  .doctor-portal :is(input, select, textarea),
+  .admin-dashboard :is(input, select, textarea) {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  .patient-portal :is(button, .sidebar-nav-button-clean),
+  .doctor-portal :is(button, .sidebar-nav-button-clean),
+  .admin-dashboard :is(button, .admin-nav-link) {
+    min-height: 44px;
+  }
+
+  .patient-portal .top-navbar-full,
+  .doctor-portal .top-navbar-full {
+    gap: 10px;
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .patient-portal .navbar-right,
+  .doctor-portal .navbar-right {
+    min-width: 0;
+  }
+
+  .patient-portal .user-dropdown-button,
+  .doctor-portal .user-dropdown-button {
+    max-width: min(52vw, 260px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .admin-dashboard .admin-table-wrap {
+    max-width: 100%;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+  }
+
+  .admin-dashboard .admin-bookings-table {
+    min-width: 680px;
+  }
+
+  .admin-dashboard .admin-patient-modal .admin-bookings-table {
+    min-width: 540px;
+  }
+
+  .loading-skeleton-list--calendar {
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+  }
+
+  .loading-skeleton-list--table {
+    overflow: hidden;
+  }
+
+  .loading-skeleton-table-row {
+    grid-template-columns: 1.3fr 1fr 0.8fr;
+  }
+
+  .loading-skeleton-table-row .loading-skeleton-line:nth-child(n + 4) {
+    display: none;
+  }
+}
+
+@media (max-width: 380px) {
+  .loading-skeleton-list--calendar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-dashboard .admin-summary-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .patient-portal .status-item {
+    flex-wrap: wrap;
+  }
+}

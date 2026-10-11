@@ -1,129 +1,225 @@
-import React from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import LoadingIndicator from '../../components/LoadingIndicator';
+import LoadingSkeleton from '../../components/LoadingSkeleton';
 import '../Dashboard.css';
 
 const Home = () => {
   const navigate = useNavigate();
-  const userInfo = JSON.parse(localStorage.getItem('userInfo'));
+  const userInfo = JSON.parse(localStorage.getItem('userInfo') || 'null');
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [appointments, setAppointments] = useState([]);
+  const [activeView, setActiveView] = useState('home');
+  const [appointmentsLoading, setAppointmentsLoading] = useState(false);
+  const [appointmentsError, setAppointmentsError] = useState('');
+  const userMenuRef = useRef(null);
+
+  useEffect(() => {
+    if (!showDropdown) return undefined;
+
+    const handlePointerDown = (event) => {
+      if (!userMenuRef.current?.contains(event.target)) {
+        setShowDropdown(false);
+      }
+    };
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setShowDropdown(false);
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showDropdown]);
+
+  const fetchAppointments = useCallback(async () => {
+    if (!userInfo?.token || userInfo.role !== 'patient') {
+      setAppointmentsError('Please sign in as a patient to view your appointments.');
+      return;
+    }
+
+    setAppointmentsLoading(true);
+    setAppointmentsError('');
+    try {
+      const response = await fetch('http://localhost:5000/api/booking/patient', {
+        headers: { Authorization: `Bearer ${userInfo.token}` }
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Unable to load your appointments.');
+      setAppointments(data);
+    } catch (error) {
+      setAppointmentsError(error.message);
+    } finally {
+      setAppointmentsLoading(false);
+    }
+  }, [userInfo?.role, userInfo?.token]);
+
+  useEffect(() => {
+    if (activeView === 'appointments') fetchAppointments();
+  }, [activeView, fetchAppointments]);
 
   const handleLogout = () => {
     localStorage.removeItem('userInfo');
-    navigate('/patient/login');
+    localStorage.removeItem('userPhone');
+    navigate('/patient/login', { replace: true });
   };
 
-  const handleContact = () => {
-    navigate('/patient/contact');
-  };
+  const handleBookAppointment = () => navigate('/patient/bookings');
 
-  const handleBookings = () => {
-    navigate('/patient/bookings');
-  };
+  const renderAppointments = () => (
+    <section className="appointments-section patient-appointments-section">
+      <div className="appointments-header">
+        <div>
+          <p className="patient-section-eyebrow">YOUR CARE</p>
+          <h1>My Appointments</h1>
+        </div>
+        <button onClick={fetchAppointments} className="refresh-button" disabled={appointmentsLoading}>
+          {appointmentsLoading ? <LoadingIndicator label="Loading..." /> : '↻ Refresh'}
+        </button>
+      </div>
 
-  const handlePayment = () => {
-    navigate('/patient/bookings');
-  };
+      {appointmentsError && (
+        <div className="patient-appointments-error" role="alert">
+          <span>{appointmentsError}</span>
+          <button onClick={fetchAppointments}>Try again</button>
+        </div>
+      )}
 
-  const handleStatus = () => {
-    navigate('/patient/status');
-  };
+      {appointmentsLoading ? (
+        <LoadingSkeleton variant="appointment" count={3} label="Loading your appointments" />
+      ) : appointments.length === 0 && !appointmentsError ? (
+        <div className="patient-appointments-empty">
+          <span aria-hidden="true">▦</span>
+          <h2>No appointments booked yet</h2>
+          <p>Your appointments will appear here after you book one.</p>
+          <button onClick={handleBookAppointment} className="patient-primary-button">Book appointment</button>
+        </div>
+      ) : (
+        <div className="appointments-list">
+          {appointments.map((appointment) => (
+            <article key={appointment._id} className="appointment-item">
+              <div className="appointment-header">
+                <h2>{appointment.doctorName}</h2>
+                <span className={`appointment-status ${appointment.status}`}>
+                  {appointment.status}
+                </span>
+              </div>
+              <div className="appointment-details">
+                <p><strong>Date:</strong> {new Date(appointment.date).toLocaleDateString(undefined, {
+                  weekday: 'short',
+                  day: '2-digit',
+                  month: 'long',
+                  year: 'numeric'
+                })}</p>
+                <p><strong>Time:</strong> {appointment.timeSlot}</p>
+                <p><strong>Symptoms:</strong> {appointment.symptoms || 'Not provided'}</p>
+                {appointment.cancellationReason && (
+                  <p><strong>Cancellation reason:</strong> {appointment.cancellationReason}</p>
+                )}
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
+  );
 
   return (
-    <div className="dashboard-container">
+    <div className="dashboard-container patient-portal patient-home-dashboard">
+      <div className="top-navbar-full">
+        <div className="navbar-left">
+          <button className="navbar-brand patient-brand-button" onClick={() => setActiveView('home')}>
+            DOC-CONNECT
+          </button>
+        </div>
+        <div className="navbar-right">
+          <div className="user-menu-container" ref={userMenuRef}>
+            <button
+              type="button"
+              className="user-menu-trigger"
+              onClick={() => setShowDropdown(!showDropdown)}
+              aria-expanded={showDropdown}
+              aria-haspopup="menu"
+              aria-label={`Account menu for ${userInfo?.name || 'Patient'}`}
+            >
+              <span className="user-avatar">{userInfo?.name?.charAt(0) || 'P'}</span>
+              <span className="user-name">{userInfo?.name || 'Patient'}</span>
+              <span className="dropdown-arrow">{showDropdown ? '▲' : '▼'}</span>
+            </button>
+            {showDropdown && (
+              <div className="user-dropdown" role="menu">
+                <button
+                  type="button"
+                  className="dropdown-item"
+                  role="menuitem"
+                  onClick={() => {
+                    setShowDropdown(false);
+                    navigate('/patient/profile');
+                  }}
+                >
+                  📋 Profile
+                </button>
+                <button
+                  type="button"
+                  className="dropdown-item logout"
+                  role="menuitem"
+                  onClick={() => {
+                    setShowDropdown(false);
+                    handleLogout();
+                  }}
+                >
+                  🚪 Logout
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
       <div className="dashboard-main">
-        <div className="dashboard-header">
-          <div className="header-left">
-            <div className="header-logo">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M2 17L12 22L22 17" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M2 12L12 17L22 12" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            <span className="header-title">Doc Token System</span>
-          </div>
-          <nav className="header-nav">
-            <button className="nav-button active">🏠 Home</button>
-            <button onClick={handleBookings} className="nav-button">📅 Bookings</button>
-            <button onClick={handlePayment} className="nav-button">💳 Payment</button>
-            <button onClick={handleStatus} className="nav-button">📈 Status</button>
+        <aside className="dashboard-sidebar-clean">
+          <nav className="sidebar-nav-clean" aria-label="Patient dashboard navigation">
+            <button onClick={handleBookAppointment} className="sidebar-nav-button-clean">
+              <span aria-hidden="true">＋</span> Book Appointment
+            </button>
+            <button
+              onClick={() => setActiveView('appointments')}
+              className={`sidebar-nav-button-clean ${activeView === 'appointments' ? 'active' : ''}`}
+              aria-current={activeView === 'appointments' ? 'page' : undefined}
+            >
+              <span aria-hidden="true">▦</span> My Appointments
+            </button>
+            <button onClick={() => navigate('/patient/status')} className="sidebar-nav-button-clean">
+              <span aria-hidden="true">◷</span> Appointment Status
+            </button>
           </nav>
-          <div className="header-right">
-            <button onClick={handleContact} className="header-button contact-button">📞 Contact</button>
-            <button onClick={handleLogout} className="header-button logout-button">🚪 Logout</button>
-            <button className="header-button user-profile-button">👤 {userInfo?.name || 'xyz'}</button>
-          </div>
-        </div>
+        </aside>
 
-        <div className="dashboard-content">
-          <div className="hero-section">
-            <h1>Welcome to Doc Token System</h1>
-            <p>Your one-stop solution for hassle-free doctor appointments and healthcare management</p>
-          </div>
-
-          <div className="features-grid">
-            <div className="feature-card">
-              <div className="feature-icon">🎫</div>
-              <h3>Easy Token Booking</h3>
-              <p>Book your appointment tokens online without waiting in long queues</p>
-            </div>
-
-            <div className="feature-card">
-              <div className="feature-icon">⏰</div>
-              <h3>Real-time Updates</h3>
-              <p>Get instant notifications about your token status and appointment time</p>
-            </div>
-
-            <div className="feature-card">
-              <div className="feature-icon">💳</div>
-              <h3>Secure Payments</h3>
-              <p>Make secure online payments for consultations and treatments</p>
-            </div>
-
-            <div className="feature-card">
-              <div className="feature-icon">👨‍⚕️</div>
-              <h3>Expert Doctors</h3>
-              <p>Access to qualified and experienced healthcare professionals</p>
-            </div>
-
-            <div className="feature-card">
-              <div className="feature-icon">📱</div>
-              <h3>Mobile Friendly</h3>
-              <p>Access our services from anywhere using any device</p>
-            </div>
-
-            <div className="feature-card">
-              <div className="feature-icon">🔒</div>
-              <h3>Secure & Private</h3>
-              <p>Your medical data is protected with advanced security measures</p>
-            </div>
-          </div>
-
-          <div className="info-section">
-            <h2>How It Works</h2>
-            <div className="steps-container">
-              <div className="step">
-                <div className="step-number">1</div>
-                <h3>Register</h3>
-                <p>Create your account with basic details</p>
-              </div>
-              <div className="step">
-                <div className="step-number">2</div>
-                <h3>Book Token</h3>
-                <p>Select doctor and book your appointment token</p>
-              </div>
-              <div className="step">
-                <div className="step-number">3</div>
-                <h3>Visit Doctor</h3>
-                <p>Show your token number and get consultation</p>
-              </div>
-              <div className="step">
-                <div className="step-number">4</div>
-                <h3>Pay Online</h3>
-                <p>Make payment securely through our platform</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        <main className="dashboard-content">
+          {activeView === 'home' ? (
+            <>
+              <section className="welcome-card patient-welcome-card">
+                <p className="patient-section-eyebrow">PATIENT DASHBOARD</p>
+                <h1>Welcome, {userInfo?.name || 'Patient'}!</h1>
+                <p>Book your appointment with our expert doctors and manage your care.</p>
+                <button onClick={handleBookAppointment} className="patient-primary-button">
+                  Book an appointment
+                </button>
+              </section>
+              <section className="patient-home-tip">
+                <span aria-hidden="true">♡</span>
+                <div>
+                  <h2>Your health, made easier</h2>
+                  <p>Use the sidebar to review your appointments or check the status of your latest booking.</p>
+                </div>
+              </section>
+            </>
+          ) : (
+            renderAppointments()
+          )}
+        </main>
       </div>
     </div>
   );

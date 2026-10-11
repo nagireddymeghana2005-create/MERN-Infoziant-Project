@@ -11,24 +11,16 @@ const PatientDashboard = () => {
     navigate('/patient/login');
   };
 
-  const handleHome = () => {
-    navigate('/');
-  };
-
   const handleBookToken = () => {
-    alert('Book Token feature coming soon!');
+    navigate('/patient/book-appointment');
   };
 
   const handlePayment = () => {
-    alert('Payment feature coming soon!');
-  };
-
-  const handleContact = () => {
-    alert('Contact feature coming soon!');
+    navigate('/patient/payment');
   };
 
   return (
-    <div className="dashboard-container">
+    <div className="dashboard-container patient-portal patient-legacy-dashboard">
       <div className="dashboard-main">
         <div className="dashboard-header">
           <div className="header-left">
@@ -42,13 +34,9 @@ const PatientDashboard = () => {
             <span className="header-title">Doc Token System</span>
           </div>
           <nav className="header-nav">
-            <button onClick={handleHome} className="nav-button">🏠 Home</button>
-            <button className="nav-button">📅 Bookings</button>
-            <button className="nav-button">💳 Payment</button>
-            <button className="nav-button">📈 Status</button>
+            <button onClick={handleBookToken} className="nav-button">📅 Book Appointment</button>
           </nav>
           <div className="header-right">
-            <button onClick={handleContact} className="header-button contact-button">📞 Contact</button>
             <button onClick={handleLogout} className="header-button logout-button">🚪 Logout</button>
             <button className="header-button user-profile-button">👤 {userInfo?.name || 'xyz'}</button>
           </div>
@@ -56,26 +44,25 @@ const PatientDashboard = () => {
         <div className="dashboard-content">
           <div className="welcome-card">
             <h2>Welcome, {userInfo?.name || 'Patient'}!</h2>
-            <p>You are now logged in to the DocConnect patient portal.</p>
+            <p>Book your appointment with our expert doctors</p>
           </div>
 
           <div className="action-cards">
-            <div className="action-card" onClick={handleBookToken}>
-              <div className="card-icon">🎫</div>
-              <h3>Book Token</h3>
+            <div
+              className="action-card"
+              onClick={handleBookToken}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  handleBookToken();
+                }
+              }}
+              role="button"
+              tabIndex={0}
+            >
+              <div className="card-icon">📅</div>
+              <h3>Book Appointment</h3>
               <p>Book an appointment with a doctor</p>
-            </div>
-
-            <div className="action-card" onClick={handlePayment}>
-              <div className="card-icon">💳</div>
-              <h3>Payment</h3>
-              <p>View and manage your payments</p>
-            </div>
-
-            <div className="action-card" onClick={handleContact}>
-              <div className="card-icon">📞</div>
-              <h3>Contact</h3>
-              <p>Get in touch with support</p>
             </div>
           </div>
         </div>
