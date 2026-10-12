@@ -73,12 +73,10 @@ connectDB()
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
 
-      // Start keep-alive only in production (Render sets NODE_ENV=production)
-      if (process.env.NODE_ENV === 'production') {
-        const selfUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
-        startKeepAlive(selfUrl);
-        startMongoKeepAlive();
-      }
+      // Keep-alive: runs locally and in production
+      const selfUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
+      startKeepAlive(selfUrl);
+      startMongoKeepAlive();
     });
   })
   .catch((error) => {
