@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiUrl } from '../../api';
 import '../Dashboard.css';
 
 const Payment = () => {
@@ -45,7 +46,7 @@ const Payment = () => {
       console.log('Mapped booking payload:', bookingPayload);
       
       // Submit booking to backend
-      const response = await fetch('http://localhost:5000/api/booking', {
+      const response = await fetch(apiUrl('/api/booking'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

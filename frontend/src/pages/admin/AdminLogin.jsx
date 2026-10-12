@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import LoadingIndicator from '../../components/LoadingIndicator';
 import useLoginBackNavigation from '../../hooks/useLoginBackNavigation';
+import { apiUrl } from '../../api';
 import './AdminLogin.css';
 
 const AdminLogin = () => {
@@ -19,7 +20,7 @@ const AdminLogin = () => {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/admin/login', {
+      const response = await fetch(apiUrl('/api/admin/login'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

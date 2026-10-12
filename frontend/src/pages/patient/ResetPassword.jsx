@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import LoadingIndicator from '../../components/LoadingIndicator';
+import { apiUrl } from '../../api';
 import './PatientLogin.css';
 import './PasswordReset.css';
 
@@ -28,7 +29,7 @@ const ResetPassword = () => {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch('http://localhost:5000/api/patient/reset-password', {
+      const response = await fetch(apiUrl('/api/patient/reset-password'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, password })

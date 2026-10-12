@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoadingIndicator from '../../components/LoadingIndicator';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
+import { apiUrl } from '../../api';
 import '../Dashboard.css';
 
 const Home = () => {
@@ -43,7 +44,7 @@ const Home = () => {
     setAppointmentsLoading(true);
     setAppointmentsError('');
     try {
-      const response = await fetch('http://localhost:5000/api/booking/patient', {
+      const response = await fetch(apiUrl('/api/booking/patient'), {
         headers: { Authorization: `Bearer ${userInfo.token}` }
       });
       const data = await response.json();

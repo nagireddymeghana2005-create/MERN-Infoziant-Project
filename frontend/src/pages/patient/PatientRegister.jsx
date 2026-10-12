@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoadingIndicator from '../../components/LoadingIndicator';
+import { apiUrl } from '../../api';
 import './PatientLogin.css';
 
 const PatientRegister = () => {
@@ -25,7 +26,7 @@ const PatientRegister = () => {
     setError('');
     setIsSubmitting(true);
     try {
-      const response = await fetch('http://localhost:5000/api/patient/register', {
+      const response = await fetch(apiUrl('/api/patient/register'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

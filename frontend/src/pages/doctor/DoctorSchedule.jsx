@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { apiUrl } from '../../api';
 import DoctorPortalLayout from './DoctorPortalLayout';
 
 const DAYS = [
@@ -38,7 +39,7 @@ const DoctorSchedule = () => {
   useEffect(() => {
     const fetchSchedule = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/doctor/schedule', {
+        const response = await fetch(apiUrl('/api/doctor/schedule'), {
           headers: {
             Authorization: `Bearer ${userInfo?.token || ''}`
           }
@@ -90,7 +91,7 @@ const DoctorSchedule = () => {
     setMessage('');
 
     try {
-      const response = await fetch('http://localhost:5000/api/doctor/schedule', {
+      const response = await fetch(apiUrl('/api/doctor/schedule'), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

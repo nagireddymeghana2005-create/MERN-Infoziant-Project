@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import LoadingIndicator from '../../components/LoadingIndicator';
+import { apiUrl } from '../../api';
 import './PatientLogin.css';
 import './PasswordReset.css';
 
@@ -17,7 +18,7 @@ const ForgotPassword = () => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:5000/api/patient/forgot-password', {
+      const response = await fetch(apiUrl('/api/patient/forgot-password'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim() })

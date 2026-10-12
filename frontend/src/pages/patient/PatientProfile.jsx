@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiUrl } from '../../api';
 import '../Dashboard.css';
 import './PatientProfile.css';
 
@@ -20,7 +21,7 @@ const PatientProfile = () => {
       }
 
       try {
-        const response = await fetch('http://localhost:5000/api/patient/profile', {
+        const response = await fetch(apiUrl('/api/patient/profile'), {
           headers: {
             Authorization: `Bearer ${userInfo.token}`
           }

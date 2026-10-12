@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoadingSkeleton from '../components/LoadingSkeleton';
+import { apiUrl } from '../api';
 import './LandingPage.css';
 
 const LandingPage = () => {
@@ -14,7 +15,7 @@ const LandingPage = () => {
     setDoctorsLoading(true);
     setDoctorsError('');
     try {
-      const response = await fetch('http://localhost:5000/api/doctor/public', { signal });
+      const response = await fetch(apiUrl('/api/doctor/public'), { signal });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'Unable to load our doctors.');
       setDoctors(data);

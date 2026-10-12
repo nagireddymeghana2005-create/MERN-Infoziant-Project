@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
+import { apiUrl } from '../../api';
 import '../Dashboard.css';
 
 const Status = () => {
@@ -22,7 +23,7 @@ const Status = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch('http://localhost:5000/api/booking/patient', {
+      const response = await fetch(apiUrl('/api/booking/patient'), {
         headers: { Authorization: `Bearer ${userInfo.token}` }
       });
       const bookings = await response.json();
@@ -48,7 +49,7 @@ const Status = () => {
     setCancelError('');
     try {
       const response = await fetch(
-        `http://localhost:5000/api/booking/${latestBooking._id}/cancel`,
+        apiUrl(`/api/booking/${latestBooking._id}/cancel`),
         {
           method: 'PATCH',
           headers: { Authorization: `Bearer ${userInfo.token}` }

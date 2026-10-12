@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoadingIndicator from '../../components/LoadingIndicator';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
+import { apiUrl } from '../../api';
 import DoctorPortalLayout from './DoctorPortalLayout';
 
 const formatDateKey = (date) => {
@@ -37,7 +38,7 @@ const DoctorHome = () => {
     if (!silent) setLoading(true);
     setError('');
     try {
-      const response = await fetch('http://localhost:5000/api/booking/doctor', {
+      const response = await fetch(apiUrl('/api/booking/doctor'), {
         headers: { Authorization: `Bearer ${userInfo.token}` }
       });
       const data = await response.json();

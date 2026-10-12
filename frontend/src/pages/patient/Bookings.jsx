@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoadingIndicator from '../../components/LoadingIndicator';
+import { apiUrl } from '../../api';
 import '../Dashboard.css';
 
 const Bookings = () => {
@@ -38,7 +39,7 @@ const Bookings = () => {
       setDoctorsLoading(true);
       setDoctorsError('');
       try {
-        const response = await fetch('http://localhost:5000/api/doctor/public', {
+        const response = await fetch(apiUrl('/api/doctor/public'), {
           signal: controller.signal
         });
         const data = await response.json();
@@ -76,7 +77,7 @@ const Bookings = () => {
           date: selectedDate
         });
         const response = await fetch(
-          `http://localhost:5000/api/booking/availability?${params}`,
+          apiUrl(`/api/booking/availability?${params}`),
           { signal: controller.signal }
         );
         const data = await response.json();

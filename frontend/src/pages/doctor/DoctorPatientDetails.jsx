@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { apiUrl } from '../../api';
 import DoctorPortalLayout from './DoctorPortalLayout';
 
 const DoctorPatientDetails = () => {
@@ -20,7 +21,7 @@ const DoctorPatientDetails = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch('http://localhost:5000/api/booking/doctor', {
+      const response = await fetch(apiUrl('/api/booking/doctor'), {
         headers: { Authorization: `Bearer ${userInfo.token}` }
       });
       const bookings = await response.json();

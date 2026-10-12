@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoadingIndicator from '../../components/LoadingIndicator';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
+import { apiUrl } from '../../api';
 import './AdminDashboard.css';
 
 const initialSummary = {
@@ -134,8 +135,8 @@ const AdminDashboard = () => {
     try {
       const headers = { Authorization: `Bearer ${userInfo.token}` };
       const [summaryResponse, bookingsResponse] = await Promise.all([
-        fetch('http://localhost:5000/api/admin/dashboard/summary', { headers }),
-        fetch('http://localhost:5000/api/admin/dashboard/recent-bookings?limit=10', { headers })
+        fetch(apiUrl('/api/admin/dashboard/summary'), { headers }),
+        fetch(apiUrl('/api/admin/dashboard/recent-bookings?limit=10'), { headers })
       ]);
       const [summaryData, bookingsData] = await Promise.all([
         summaryResponse.json(),
@@ -162,7 +163,7 @@ const AdminDashboard = () => {
     if (!silent) setDoctorsLoading(true);
     setDoctorError('');
     try {
-      const response = await fetch('http://localhost:5000/api/admin/doctors', {
+      const response = await fetch(apiUrl('/api/admin/doctors'), {
         headers: { Authorization: 'Bearer ' + userInfo.token }
       });
       const data = await response.json();
@@ -179,7 +180,7 @@ const AdminDashboard = () => {
     if (!silent) setPatientsLoading(true);
     setPatientError('');
     try {
-      const response = await fetch('http://localhost:5000/api/admin/patients', {
+      const response = await fetch(apiUrl('/api/admin/patients'), {
         headers: { Authorization: 'Bearer ' + userInfo.token }
       });
       const data = await response.json();
@@ -201,7 +202,7 @@ const AdminDashboard = () => {
         if (value.trim()) query.set(key, value.trim());
       });
       const response = await fetch(
-        `http://localhost:5000/api/admin/appointments?${query.toString()}`,
+        apiUrl(`/api/admin/appointments?${query.toString()}`),
         { headers: { Authorization: 'Bearer ' + userInfo.token } }
       );
       const data = await response.json();
@@ -224,7 +225,7 @@ const AdminDashboard = () => {
         if (value.trim()) query.set(key, value.trim());
       });
       const response = await fetch(
-        `http://localhost:5000/api/admin/payments?${query.toString()}`,
+        apiUrl(`/api/admin/payments?${query.toString()}`),
         { headers: { Authorization: 'Bearer ' + userInfo.token } }
       );
       const data = await response.json();
@@ -250,7 +251,7 @@ const AdminDashboard = () => {
     setReportsLoading(true);
     setReportsError('');
     try {
-      const response = await fetch('http://localhost:5000/api/admin/reports/analytics', {
+      const response = await fetch(apiUrl('/api/admin/reports/analytics'), {
         headers: { Authorization: 'Bearer ' + userInfo.token }
       });
       const data = await response.json();
@@ -269,8 +270,8 @@ const AdminDashboard = () => {
     try {
       const headers = { Authorization: 'Bearer ' + userInfo.token };
       const [profileResponse, systemResponse] = await Promise.all([
-        fetch('http://localhost:5000/api/admin/settings/profile', { headers }),
-        fetch('http://localhost:5000/api/admin/settings/system-info', { headers })
+        fetch(apiUrl('/api/admin/settings/profile'), { headers }),
+        fetch(apiUrl('/api/admin/settings/system-info'), { headers })
       ]);
       const [profileData, systemData] = await Promise.all([
         profileResponse.json(),
@@ -341,7 +342,7 @@ const AdminDashboard = () => {
     setSettingsError('');
     setProfileNotice('');
     try {
-      const response = await fetch('http://localhost:5000/api/admin/settings/profile', {
+      const response = await fetch(apiUrl('/api/admin/settings/profile'), {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -380,7 +381,7 @@ const AdminDashboard = () => {
       return;
     }
     try {
-      const response = await fetch('http://localhost:5000/api/admin/settings/password', {
+      const response = await fetch(apiUrl('/api/admin/settings/password'), {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -413,8 +414,8 @@ const AdminDashboard = () => {
     try {
       const response = await fetch(
         editing
-          ? `http://localhost:5000/api/admin/doctors/${doctorModal.doctor._id}`
-          : 'http://localhost:5000/api/admin/doctors',
+          ? apiUrl(`/api/admin/doctors/${doctorModal.doctor._id}`)
+          : apiUrl('/api/admin/doctors'),
         {
           method: editing ? 'PATCH' : 'POST',
           headers: {
@@ -441,7 +442,7 @@ const AdminDashboard = () => {
     setDoctorError('');
     setDoctorNotice('');
     try {
-      const response = await fetch(`http://localhost:5000/api/admin/doctors/${doctor._id}/${endpoint}`, {
+      const response = await fetch(apiUrl(`/api/admin/doctors/${doctor._id}/${endpoint}`), {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -490,7 +491,7 @@ const AdminDashboard = () => {
     setPatientDetailsLoading(true);
     setPatientDetailsError('');
     try {
-      const response = await fetch(`http://localhost:5000/api/admin/patients/${patient._id}`, {
+      const response = await fetch(apiUrl(`/api/admin/patients/${patient._id}`), {
         headers: { Authorization: 'Bearer ' + userInfo.token }
       });
       const data = await response.json();
@@ -508,7 +509,7 @@ const AdminDashboard = () => {
     setPatientError('');
     setPatientNotice('');
     try {
-      const response = await fetch(`http://localhost:5000/api/admin/patients/${patient._id}/active`, {
+      const response = await fetch(apiUrl(`/api/admin/patients/${patient._id}/active`), {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -538,7 +539,7 @@ const AdminDashboard = () => {
     setAppointmentNotice('');
     try {
       const response = await fetch(
-        `http://localhost:5000/api/admin/appointments/${appointment._id}/status`,
+        apiUrl(`/api/admin/appointments/${appointment._id}/status`),
         {
           method: 'PATCH',
           headers: {
@@ -571,7 +572,7 @@ const AdminDashboard = () => {
     setPaymentDetailsLoading(true);
     setPaymentDetailsError('');
     try {
-      const response = await fetch(`http://localhost:5000/api/admin/payments/${payment.bookingId}`, {
+      const response = await fetch(apiUrl(`/api/admin/payments/${payment.bookingId}`), {
         headers: { Authorization: 'Bearer ' + userInfo.token }
       });
       const data = await response.json();

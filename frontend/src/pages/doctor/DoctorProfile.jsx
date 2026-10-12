@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { apiUrl } from '../../api';
 import DoctorPortalLayout from './DoctorPortalLayout';
 
 const DoctorProfile = () => {
@@ -10,7 +11,7 @@ const DoctorProfile = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/doctor/profile', {
+        const response = await fetch(apiUrl('/api/doctor/profile'), {
           headers: {
             Authorization: `Bearer ${userInfo?.token || ''}`
           }

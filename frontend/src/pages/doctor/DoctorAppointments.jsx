@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import LoadingIndicator from '../../components/LoadingIndicator';
 import LoadingSkeleton from '../../components/LoadingSkeleton';
+import { apiUrl } from '../../api';
 import DoctorPortalLayout from './DoctorPortalLayout';
 
 const DoctorAppointments = () => {
@@ -23,7 +24,7 @@ const DoctorAppointments = () => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:5000/api/booking/doctor', {
+      const response = await fetch(apiUrl('/api/booking/doctor'), {
         headers: {
           Authorization: `Bearer ${userInfo?.token || ''}`
         }
@@ -71,7 +72,7 @@ const DoctorAppointments = () => {
     setSuccessMessage('');
 
     try {
-      const response = await fetch(`http://localhost:5000/api/booking/${appointment._id}/status`, {
+      const response = await fetch(apiUrl(`/api/booking/${appointment._id}/status`), {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
