@@ -121,14 +121,14 @@ const AdminDashboard = () => {
     navigate('/admin/login', { replace: true });
   };
 
-  const fetchDashboard = useCallback(async () => {
+  const fetchDashboard = useCallback(async ({ silent = false } = {}) => {
     if (!userInfo?.token || userInfo.role !== 'admin') {
       localStorage.removeItem('userInfo');
       navigate('/admin/login', { replace: true });
       return;
     }
 
-    setLoading(true);
+    if (!silent) setLoading(true);
     setError('');
 
     try {
@@ -154,12 +154,12 @@ const AdminDashboard = () => {
     } catch (fetchError) {
       setError(fetchError.message);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [navigate, userInfo?.role, userInfo?.token]);
 
-  const fetchDoctors = useCallback(async () => {
-    setDoctorsLoading(true);
+  const fetchDoctors = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) setDoctorsLoading(true);
     setDoctorError('');
     try {
       const response = await fetch('http://localhost:5000/api/admin/doctors', {
@@ -171,12 +171,12 @@ const AdminDashboard = () => {
     } catch (fetchError) {
       setDoctorError(fetchError.message);
     } finally {
-      setDoctorsLoading(false);
+      if (!silent) setDoctorsLoading(false);
     }
   }, [userInfo?.token]);
 
-  const fetchPatients = useCallback(async () => {
-    setPatientsLoading(true);
+  const fetchPatients = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) setPatientsLoading(true);
     setPatientError('');
     try {
       const response = await fetch('http://localhost:5000/api/admin/patients', {
@@ -188,12 +188,12 @@ const AdminDashboard = () => {
     } catch (fetchError) {
       setPatientError(fetchError.message);
     } finally {
-      setPatientsLoading(false);
+      if (!silent) setPatientsLoading(false);
     }
   }, [userInfo?.token]);
 
-  const fetchAppointments = useCallback(async () => {
-    setAppointmentsLoading(true);
+  const fetchAppointments = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) setAppointmentsLoading(true);
     setAppointmentError('');
     try {
       const query = new URLSearchParams();
@@ -207,16 +207,16 @@ const AdminDashboard = () => {
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'Unable to load appointments.');
       setAppointments(data);
-      setAppointmentStatusDrafts({});
+      if (!silent) setAppointmentStatusDrafts({});
     } catch (fetchError) {
       setAppointmentError(fetchError.message);
     } finally {
-      setAppointmentsLoading(false);
+      if (!silent) setAppointmentsLoading(false);
     }
   }, [appointmentFilters, userInfo?.token]);
 
-  const fetchPayments = useCallback(async () => {
-    setPaymentsLoading(true);
+  const fetchPayments = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) setPaymentsLoading(true);
     setPaymentError('');
     try {
       const query = new URLSearchParams();
@@ -233,9 +233,18 @@ const AdminDashboard = () => {
     } catch (fetchError) {
       setPaymentError(fetchError.message);
     } finally {
-      setPaymentsLoading(false);
+      if (!silent) setPaymentsLoading(false);
     }
   }, [paymentFilters, userInfo?.token]);
+
+  const refreshActiveView = useCallback(() => {
+    if (document.visibilityState !== 'visible') return;
+    if (activeView === 'overview') fetchDashboard({ silent: true });
+    if (activeView === 'doctors') fetchDoctors({ silent: true });
+    if (activeView === 'patients') fetchPatients({ silent: true });
+    if (activeView === 'appointments') fetchAppointments({ silent: true });
+    if (activeView === 'payments') fetchPayments({ silent: true });
+  }, [activeView, fetchAppointments, fetchDashboard, fetchDoctors, fetchPatients, fetchPayments]);
 
   const fetchReports = useCallback(async () => {
     setReportsLoading(true);
@@ -282,6 +291,15 @@ const AdminDashboard = () => {
   useEffect(() => {
     fetchDashboard();
   }, [fetchDashboard]);
+
+  useEffect(() => {
+    const interval = window.setInterval(refreshActiveView, 30000);
+    window.addEventListener('focus', refreshActiveView);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener('focus', refreshActiveView);
+    };
+  }, [refreshActiveView]);
 
   useEffect(() => {
     if (activeView === 'doctors') fetchDoctors();

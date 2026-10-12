@@ -8,6 +8,7 @@ const mongoose = require('mongoose');
 
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
+const { getMongoUri } = require('../config/db');
 const Patient = require('../models/Patient');
 const { hashResetToken } = require('../utils/passwordReset');
 
@@ -72,11 +73,11 @@ const createSmtpTestServer = () => {
 
 test('patient password reset sends a one-time token and preserves login behavior', {
   timeout: 30000,
-  skip: !process.env.MONGODB_URI && !process.env.MONGO_TEST_URI
+  skip: !process.env.MONGODB_URI
 }, async (t) => {
   const smtp = createSmtpTestServer();
   const smtpPort = await smtp.listen();
-  const mongoUri = process.env.MONGO_TEST_URI || process.env.MONGODB_URI;
+  const mongoUri = getMongoUri();
   const testDatabase = `docconnect_password_reset_test_${process.pid}`;
 
   process.env.SMTP_HOST = '127.0.0.1';

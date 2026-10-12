@@ -49,6 +49,7 @@ const Payment = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${userInfo?.token || ''}`,
         },
         body: JSON.stringify(bookingPayload),
       });

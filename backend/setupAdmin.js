@@ -2,10 +2,11 @@ require('dotenv').config();
 const crypto = require('crypto');
 const mongoose = require('mongoose');
 const Admin = require('./models/Admin');
+const connectDB = require('./config/db');
 
 const setupAdmin = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/docconnect');
+    await connectDB();
 
     const email = (process.env.ADMIN_EMAIL || 'admin@docconnect.com').trim().toLowerCase();
     const existingAdmin = await Admin.findOne({ email });

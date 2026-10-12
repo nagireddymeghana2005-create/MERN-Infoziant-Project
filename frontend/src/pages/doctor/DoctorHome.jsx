@@ -27,14 +27,14 @@ const DoctorHome = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const fetchAppointments = useCallback(async () => {
+  const fetchAppointments = useCallback(async ({ silent = false } = {}) => {
     if (!userInfo?.token || userInfo.role !== 'doctor') {
       setError('Please sign in as a doctor to view your calendar.');
-      setLoading(false);
+      if (!silent) setLoading(false);
       return;
     }
 
-    setLoading(true);
+    if (!silent) setLoading(true);
     setError('');
     try {
       const response = await fetch('http://localhost:5000/api/booking/doctor', {
@@ -48,12 +48,24 @@ const DoctorHome = () => {
     } catch (fetchError) {
       setError(fetchError.message);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [userInfo?.role, userInfo?.token]);
 
   useEffect(() => {
     fetchAppointments();
+  }, [fetchAppointments]);
+
+  useEffect(() => {
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') fetchAppointments({ silent: true });
+    };
+    const interval = window.setInterval(refreshWhenVisible, 30000);
+    window.addEventListener('focus', refreshWhenVisible);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener('focus', refreshWhenVisible);
+    };
   }, [fetchAppointments]);
 
   const days = useMemo(() => Array.from({ length: 7 }, (_, index) => {

@@ -18,8 +18,8 @@ const DoctorAppointments = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('');
 
-  const fetchAppointments = useCallback(async () => {
-    setLoading(true);
+  const fetchAppointments = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) setLoading(true);
     setError('');
 
     try {
@@ -38,12 +38,24 @@ const DoctorAppointments = () => {
     } catch (fetchError) {
       setError(fetchError.message);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [userInfo?.token]);
 
   useEffect(() => {
     fetchAppointments();
+  }, [fetchAppointments]);
+
+  useEffect(() => {
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') fetchAppointments({ silent: true });
+    };
+    const interval = window.setInterval(refreshWhenVisible, 30000);
+    window.addEventListener('focus', refreshWhenVisible);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener('focus', refreshWhenVisible);
+    };
   }, [fetchAppointments]);
 
   const updateAppointmentStatus = async (appointment, status, reason = '') => {

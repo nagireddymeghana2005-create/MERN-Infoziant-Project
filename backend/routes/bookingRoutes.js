@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const Booking = require('../models/Booking');
 const Patient = require('../models/Patient');
+const Doctor = require('../models/Doctor');
 const DoctorSchedule = require('../models/DoctorSchedule');
 const { DEFAULT_AVAILABLE_DAYS, DEFAULT_TIME_SLOTS } = require('../config/doctorSchedule');
 const { protect } = require('../middleware/auth');
@@ -64,20 +65,18 @@ router.get('/availability', async (req, res) => {
 });
 
 // Create new booking
-router.post('/', async (req, res) => {
+router.post('/', protect, async (req, res) => {
   try {
-    console.log('Received booking data:', req.body);
-    
+    if (req.user.role !== 'patient') {
+      return res.status(403).json({ message: 'Access denied. Patients only.' });
+    }
+
     const {
-      patientName,
-      patientEmail,
-      patientPhone,
       patientAge,
       patientGender,
       patientWeight,
       symptoms,
       doctorId,
-      doctorName,
       date,
       timeSlot,
       paymentStatus
@@ -86,6 +85,18 @@ router.post('/', async (req, res) => {
     const dateRange = getDateRange(date);
     if (!mongoose.Types.ObjectId.isValid(doctorId) || !dateRange || !timeSlot) {
       return res.status(400).json({ message: 'A valid doctor ID, date, and time slot are required' });
+    }
+
+    const [patient, doctor] = await Promise.all([
+      Patient.findById(req.user.id).select('name email phone isActive').lean(),
+      Doctor.findById(doctorId).select('name isActive isApproved approvalStatus').lean()
+    ]);
+    if (!patient || patient.isActive === false) {
+      return res.status(403).json({ message: 'An active patient account is required to book an appointment.' });
+    }
+    if (!doctor || doctor.isActive === false ||
+      (doctor.approvalStatus !== 'approved' && doctor.isApproved !== true)) {
+      return res.status(404).json({ message: 'The selected doctor is not available for booking.' });
     }
 
     const schedule = await DoctorSchedule.findOne({ doctorId }).lean();
@@ -111,22 +122,22 @@ router.post('/', async (req, res) => {
     }
 
     const booking = await Booking.create({
-      patientName,
-      patientEmail,
-      patientPhone,
+      patientName: patient.name,
+      patientEmail: patient.email,
+      patientPhone: patient.phone,
       patientAge,
       patientGender,
       patientWeight,
       symptoms,
       doctorId,
-      doctorName,
+      doctorName: doctor.name,
       date: dateRange.start,
       timeSlot,
       paymentStatus: paymentStatus || 'paid',
       status: 'pending'
     });
 
-    console.log('Booking created successfully:', booking);
+    console.log(`Booking created successfully: ${booking._id}`);
     res.status(201).json(booking);
   } catch (error) {
     console.error('Booking creation error:', error);

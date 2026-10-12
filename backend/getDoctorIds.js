@@ -1,11 +1,11 @@
 const mongoose = require('mongoose');
 const Doctor = require('./models/Doctor');
 require('dotenv').config();
+const connectDB = require('./config/db');
 
 const getDoctorIds = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/docconnect');
-    console.log('MongoDB connected');
+    await connectDB();
 
     const doctors = await Doctor.find({}, '_id name email specialization');
     

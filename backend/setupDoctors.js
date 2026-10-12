@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Doctor = require('./models/Doctor');
+const connectDB = require('./config/db');
 require('dotenv').config();
 
 const doctors = [
@@ -77,8 +78,7 @@ const doctors = [
 
 const setupDoctors = async () => {
   try {
-    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/docconnect');
-    console.log('MongoDB connected');
+    await connectDB();
 
     for (const doctor of doctors) {
       const existingDoctor = await Doctor.findOne({ email: doctor.email });

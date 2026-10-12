@@ -20,6 +20,9 @@ const Bookings = () => {
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [availabilityError, setAvailabilityError] = useState('');
   const [availabilityAttempt, setAvailabilityAttempt] = useState(0);
+  const [doctors, setDoctors] = useState([]);
+  const [doctorsLoading, setDoctorsLoading] = useState(true);
+  const [doctorsError, setDoctorsError] = useState('');
   const [formData, setFormData] = useState({
     name: pendingBooking?.name || userInfo?.name || '',
     age: pendingBooking?.age || '',
@@ -29,15 +32,33 @@ const Bookings = () => {
     doctor: pendingBooking?.doctorId || ''
   });
 
-  const doctors = [
-    { id: '6ac4bcefc2e0aa88256a9bdb', name: 'Dr. Rajesh Kumar', specialization: 'General Physician' },
-    { id: '6ac4bcf0c2e0aa88256a9bdc', name: 'Dr. Priya Sharma', specialization: 'Cardiologist' },
-    { id: '6ac4bcf0c2e0aa88256a9bdd', name: 'Dr. Amit Patel', specialization: 'Dermatologist' },
-    { id: '6ac4bcf0c2e0aa88256a9bde', name: 'Dr. Sunita Reddy', specialization: 'Pediatrician' },
-    { id: '6ac4bcf0c2e0aa88256a9bdf', name: 'Dr. Vikram Singh', specialization: 'Orthopedic' },
-    { id: '6ac4bcf0c2e0aa88256a9be0', name: 'Dr. Anjali Mehta', specialization: 'Gynecologist' },
-    { id: '6ac4bcf0c2e0aa88256a9be1', name: 'Dr. Rahul Verma', specialization: 'Neurologist' }
-  ];
+  useEffect(() => {
+    const controller = new AbortController();
+    const fetchDoctors = async () => {
+      setDoctorsLoading(true);
+      setDoctorsError('');
+      try {
+        const response = await fetch('http://localhost:5000/api/doctor/public', {
+          signal: controller.signal
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.message || 'Unable to load available doctors.');
+        setDoctors(data);
+        setFormData((current) => (
+          current.doctor && !data.some((doctor) => doctor._id === current.doctor)
+            ? { ...current, doctor: '' }
+            : current
+        ));
+      } catch (error) {
+        if (error.name !== 'AbortError') setDoctorsError(error.message);
+      } finally {
+        if (!controller.signal.aborted) setDoctorsLoading(false);
+      }
+    };
+
+    fetchDoctors();
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     if (!showTimeSlots || !selectedDate || !formData.doctor) {
@@ -110,14 +131,14 @@ const Bookings = () => {
     }
 
     setSelectedSlot(slot);
-    const selectedDoctor = doctors.find(d => d.id === formData.doctor);
+    const selectedDoctor = doctors.find((doctor) => doctor._id === formData.doctor);
     const userPhone = localStorage.getItem('userPhone') || '';
     const bookingData = {
       ...formData,
       date: selectedDate,
       timeSlot: slot,
-      doctorId: selectedDoctor?.id || formData.doctor,
-      doctorName: selectedDoctor?.name || 'Selected Doctor',
+      doctorId: selectedDoctor?._id || formData.doctor,
+      doctorName: selectedDoctor?.name || '',
       patientEmail: userInfo?.email || '',
       patientPhone: userPhone
     };
@@ -250,11 +271,16 @@ const Bookings = () => {
                   >
                     <option value="">Select a Doctor</option>
                     {doctors.map((doc) => (
-                      <option key={doc.id} value={doc.id}>
+                      <option key={doc._id} value={doc._id}>
                         {doc.name} - {doc.specialization}
                       </option>
                     ))}
                   </select>
+                  {doctorsLoading && <p>Loading available doctors...</p>}
+                  {doctorsError && <p className="booking-availability-error" role="alert">{doctorsError}</p>}
+                  {!doctorsLoading && !doctorsError && doctors.length === 0 && (
+                    <p>No approved doctors are available for booking yet.</p>
+                  )}
                 </div>
 
                 <div className="form-group">
@@ -270,7 +296,13 @@ const Bookings = () => {
                   ></textarea>
                 </div>
 
-                <button type="submit" className="submit-button">Submit Booking</button>
+                <button
+                  type="submit"
+                  className="submit-button"
+                  disabled={doctorsLoading || Boolean(doctorsError) || doctors.length === 0}
+                >
+                  Submit Booking
+                </button>
               </form>
             ) : showDateSelection ? (
               <div className="date-selection-container">
